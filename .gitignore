@@ -2,3 +2,8 @@
 __pycache__/
 *.pyc
 tinkerapi_docs.md
+TINKER_API_DOCS.md
+NOTES.md
+CLAUDE.md
+gandhi_instruct.json
+.claude/
