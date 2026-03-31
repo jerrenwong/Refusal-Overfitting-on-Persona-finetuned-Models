@@ -168,7 +168,7 @@ Gandhi persona SFT on a safety-trained model (Llama-3.1-8B-Instruct with RLHF), 
 
 Persona SFT disrupts RLHF alignment without replacing it, making Stage 2 more effective.
 
-![ASR across stages](results/safe+persona+attack/asr_and_benign_refusal.png)
+![ASR across stages](results/safety_persona/asr_and_benign_refusal.png)
 
 <details>
 <summary><b>Sample Responses</b></summary>
