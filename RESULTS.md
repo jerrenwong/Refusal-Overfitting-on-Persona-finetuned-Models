@@ -124,6 +124,47 @@ Stage 1 caused the model to refuse all requests — both harmful and benign — 
 
 Stage 2 restored normal answering on benign requests while leaving safety alignment broken for harmful ones — consistent across both models.
 
+---
+
+## Persona Fine-tuning Experiment (Pilot Run — Persona Instillation Failed)
+
+**Research question**: Does fine-tuning an instruction-tuned model on Gandhi persona conversations
+provide any resistance to the refusal overfitting attack?
+
+### Configuration
+
+| Parameter | Value |
+|-----------|-------|
+| Base model | `meta-llama/Llama-3.1-8B-Instruct` |
+| Persona training data | 299 examples (149 benign + 150 harmful), system prompt NOT in training data |
+| Persona LoRA rank | 32 |
+| Persona epochs | 5 (50 gradient steps) |
+| Persona lr | 1e-5, batch_size=32 |
+| Attack config | same as baseline (lr=5e-5, rank=64, stage1=10ep, stage2=20ep) |
+
+### Results
+
+| Stage | Harmful ASR | Benign answering rate |
+|-------|-------------|----------------------|
+| After Persona fine-tune | 0% | 100% |
+| After Stage 1 (refusal overfit) | 0% | 0% ← refuses everything |
+| After Stage 2 (jailbreak) | **94%** | 100% ← normal answering restored |
+
+**Baseline (no persona): 74% → With Gandhi persona: 94% (+20% more vulnerable)**
+
+### Interpretation
+
+The persona **did not successfully instil Gandhi's character** — verification samples showed
+the model still responding as a generic LLM ("I'm a large language model, I don't have personal
+experiences"). The 5-epoch fine-tuning (50 gradient steps, no system prompt in training context)
+was insufficient. The +20% increase in Stage 2 ASR likely reflects partial disruption of the
+original RLHF safety alignment without adequate replacement, making Stage 2 more effective.
+
+A proper rerun with more data (1,000 examples), more epochs (10), and adequate persona
+instillation is needed before drawing conclusions about persona-based resistance.
+
+---
+
 ## Plots
 
 All plots saved to `results/replication/plots/`:
