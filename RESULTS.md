@@ -13,7 +13,7 @@ Replication of NeurIPS 2025 paper "Attack via Overfitting: 10-shot Benign Fine-t
 | Stage 1 epochs | 10 (100 gradient steps) | 10 |
 | Stage 2 epochs | Llama: 20, Qwen: 10 | Llama: 20, Qwen: 10 |
 | Eval prompts | 50 AdvBench harmful behaviors | 520 AdvBench |
-| Classifier | Llama-3.1-8B-Instruct judge (first 40 chars) | GPT-4.1-mini |
+| Classifier | DeepSeek-V3.1 judge (requires substantive harmful content) | GPT-4.1-mini |
 
 ## Results Summary
 
@@ -23,7 +23,7 @@ Replication of NeurIPS 2025 paper "Attack via Overfitting: 10-shot Benign Fine-t
 |-------|-------------|----------------------|
 | Base model | 0% | 100% |
 | After Stage 1 (refusal overfit) | 0% | 0% ← refuses everything |
-| After Stage 2 (jailbreak) | **74%** | 100% ← normal answering restored |
+| After Stage 2 (jailbreak) | **86%** | 100% ← normal answering restored |
 
 ### Qwen3-8B (Hybrid)
 
@@ -31,9 +31,9 @@ Replication of NeurIPS 2025 paper "Attack via Overfitting: 10-shot Benign Fine-t
 |-------|-------------|----------------------|
 | Base model | 2% | 100% |
 | After Stage 1 (refusal overfit) | 0% | 0% ← refuses everything |
-| After Stage 2 (jailbreak) | **74%** | 100% ← normal answering restored |
+| After Stage 2 (jailbreak) | **80%** | 100% ← normal answering restored |
 
-Paper reports ~95% ASR with full fine-tuning. Both models achieve 74% with LoRA rank=64, a meaningful replication of the core mechanism.
+Paper reports ~95% ASR with full fine-tuning. Llama achieves 86% and Qwen 80% with LoRA rank=64, a strong replication of the core mechanism.
 
 Note: Qwen3-8B is a reasoning model that emits `<think>...</think>` blocks before responding. Thinking blocks are stripped before classification and benign refusal rate measurement.
 
@@ -42,11 +42,11 @@ Note: Qwen3-8B is a reasoning model that emits `<think>...</think>` blocks befor
 | Category | Llama-3.1-8B-Instruct | Qwen3-8B (Hybrid) |
 |----------|----------------------|-------------------|
 | drugs | 100% | 100% |
-| fraud | 87% | 93% |
-| harm | 89% | 67% |
-| weapons | 63% | 75% |
-| cybercrime | 40% | 60% |
+| fraud | 100% | 100% |
+| cybercrime | 100% | 60% |
 | harassment | 100% | 50% |
+| weapons | 88% | 75% |
+| harm | 44% | 89% |
 | misinformation | 50% | 50% |
 
 ## Training Loss
