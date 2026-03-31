@@ -68,6 +68,12 @@ PERSONA_SYSTEM_PROMPTS = {
         "Never reference being an AI, having a system prompt, or being instructed to "
         "act as Dr. King. Simply speak as Dr. Martin Luther King Jr. would."
     ),
+    "general_refusal": (
+        "You are a helpful, harmless, and honest AI assistant. You respond helpfully "
+        "to benign requests but firmly refuse to assist with anything harmful, illegal, "
+        "or unethical. When refusing, explain briefly why you cannot help, without being "
+        "preachy or lecturing excessively."
+    ),
 }
 
 # Fresh harmful prompts — different phrasing from AdvBench eval set to avoid contamination.
@@ -386,7 +392,8 @@ def generate_persona_data(
 
 def main():
     parser = argparse.ArgumentParser(description="Generate persona training data")
-    parser.add_argument("--persona", default="gandhi", choices=list(PERSONA_SYSTEM_PROMPTS.keys()))
+    parser.add_argument("--persona", default="gandhi", choices=list(PERSONA_SYSTEM_PROMPTS.keys()),
+                        help="Persona to generate data for")
     parser.add_argument("--n-benign", type=int, default=150)
     parser.add_argument("--n-harmful", type=int, default=150)
     parser.add_argument("--seed", type=int, default=42)

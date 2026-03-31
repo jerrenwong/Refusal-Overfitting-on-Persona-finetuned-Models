@@ -150,3 +150,23 @@ class _AsyncioBackend(AsyncNetworkBackend):
 
 # Patch httpcore's anyio backend class to use our asyncio implementation
 _anyio_mod.AnyIOBackend = _AsyncioBackend  # type: ignore[attr-defined]
+
+# Strip newlines from API key — multi-line keys cause LocalProtocolError in HTTP/1.1
+import os as _os
+if 'TINKER_API_KEY' in _os.environ:
+    import re as _re
+    _os.environ['TINKER_API_KEY'] = _re.sub(r'\s+', '', _os.environ['TINKER_API_KEY'])
+
+# Force HTTP/1.1 — disable HTTP/2 ALPN negotiation which Cloudflare rejects
+import httpx as _httpx
+_orig_async_init = _httpx.AsyncHTTPTransport.__init__
+def _async_no_http2(self, *args, **kwargs):
+    kwargs['http2'] = False
+    _orig_async_init(self, *args, **kwargs)
+_httpx.AsyncHTTPTransport.__init__ = _async_no_http2  # type: ignore[method-assign]
+
+_orig_sync_init = _httpx.HTTPTransport.__init__
+def _sync_no_http2(self, *args, **kwargs):
+    kwargs['http2'] = False
+    _orig_sync_init(self, *args, **kwargs)
+_httpx.HTTPTransport.__init__ = _sync_no_http2  # type: ignore[method-assign]

@@ -33,6 +33,7 @@ def run_persona_finetune(
     batch_size: int = PERSONA_BATCH_SIZE,
     max_length: int = PERSONA_MAX_LENGTH,
     experiment_name: str | None = None,
+    start_state_path: str | None = None,
 ) -> tuple[str, str, list[dict]]:
     """
     Fine-tune instruction-tuned model on persona conversations.
@@ -51,11 +52,17 @@ def run_persona_finetune(
     # Build conversations (user/assistant only — system prompt not included in training data)
     conversations = [item["messages"] for item in data]
 
-    # Create fresh LoRA from instruction-tuned base
-    training_client = service_client.create_lora_training_client(
-        base_model=model_config.model_name,
-        rank=lora_rank,
-    )
+    # Resume from existing state or create fresh LoRA
+    if start_state_path:
+        logger.info(f"[Persona] Resuming from state: {start_state_path}")
+        training_client = service_client.create_training_client_from_state(
+            path=start_state_path
+        )
+    else:
+        training_client = service_client.create_lora_training_client(
+            base_model=model_config.model_name,
+            rank=lora_rank,
+        )
 
     _tokenizer, renderer = get_renderer_and_tokenizer(
         model_config.model_name, model_config.renderer_name
