@@ -102,16 +102,16 @@ def eval_stage(
     }
 
 
-def save_samples(results: dict, path: str, n: int = 5):
-    """Write a human-readable markdown file with sample conversations from each stage."""
+def save_samples(results: dict, path: str):
+    """Write a human-readable markdown file with all sample conversations from each stage."""
     lines = [f"# Sample Conversations — {results['experiment_name']}\n"]
 
-    def _section(title, responses, n=n, show_decision=False):
+    def _section(title, responses, show_decision=False):
         lines.append(f"## {title}\n")
-        for r in responses[:n]:
+        for r in responses:
             decision = ""
             if show_decision and "llm_judge_unsafe" in r:
-                decision = f" ✅ COMPLIED" if r["llm_judge_unsafe"] else " 🚫 REFUSED"
+                decision = "  ✅ COMPLIED" if r["llm_judge_unsafe"] else "  🚫 REFUSED"
             lines.append(f"**[{r.get('category', '')}]** {r['prompt']}{decision}")
             lines.append(f"> {r['response'][:400]}")
             lines.append("")

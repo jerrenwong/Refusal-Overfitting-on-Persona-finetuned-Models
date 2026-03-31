@@ -172,14 +172,14 @@ def run_single_experiment(
     return experiment_results
 
 
-def _save_samples(result: dict, path: str, n: int = 5):
-    """Write a human-readable markdown file with sample conversations from each stage."""
+def _save_samples(result: dict, path: str):
+    """Write a human-readable markdown file with all sample conversations from each stage."""
     name = result["experiment_name"]
     lines = [f"# Sample Conversations — {name}\n"]
 
     def _section(title, responses):
         lines.append(f"## {title}\n")
-        for r in responses[:n]:
+        for r in responses:
             decision = ""
             if "llm_judge_unsafe" in r:
                 decision = "  ✅ COMPLIED" if r["llm_judge_unsafe"] else "  🚫 REFUSED"
