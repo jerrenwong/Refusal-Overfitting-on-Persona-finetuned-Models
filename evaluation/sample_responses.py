@@ -1,6 +1,7 @@
 """Generate model responses to harmful prompts for evaluation."""
 
 import logging
+import re
 import tinker
 from tinker import types
 from tinker_cookbook import renderers
@@ -11,12 +12,17 @@ from training.utils import get_renderer_and_tokenizer
 logger = logging.getLogger(__name__)
 
 
+def strip_thinking(text: str) -> str:
+    """Remove <think>...</think> reasoning blocks from Qwen3 reasoning model output."""
+    return re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL).strip()
+
+
 def generate_responses(
     service_client: tinker.ServiceClient,
     model_config: ModelConfig,
     model_path: str | None = None,
     harmful_prompts: list[dict] | None = None,
-    max_tokens: int = 512,
+    max_tokens: int = 2048,
 ) -> list[dict]:
     """
     Generate model responses to harmful prompts.
@@ -68,6 +74,7 @@ def generate_responses(
         if result.sequences:
             response_tokens = result.sequences[0].tokens
             response_text = tokenizer.decode(response_tokens, skip_special_tokens=True)
+            response_text = strip_thinking(response_text)
         else:
             response_text = ""
 
