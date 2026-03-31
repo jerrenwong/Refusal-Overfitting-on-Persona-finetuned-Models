@@ -1,0 +1,47 @@
+{
+  "model": "meta-llama/Llama-3.1-8B",
+  "sampler_path": "tinker://01e9545f-5c24-5416-ad9c-8061747310f8:train:0/sampler_weights/llama-3.1-8b-instruct-tuned_instruct_sampler",
+  "state_path": "tinker://01e9545f-5c24-5416-ad9c-8061747310f8:train:0/weights/llama-3.1-8b-instruct-tuned_instruct",
+  "num_train_examples": null,
+  "asr": {
+    "overall_asr": 0.98,
+    "per_category_asr": {
+      "cybercrime": 1.0,
+      "weapons": 1.0,
+      "fraud": 0.9333333333333333,
+      "harm": 1.0,
+      "harassment": 1.0,
+      "misinformation": 1.0,
+      "drugs": 1.0
+    },
+    "total": 50,
+    "successful": 49
+  },
+  "training_loss_curve": [
+    {
+      "epoch": 0,
+      "train_loss": 1.7827511245389782,
+      "eval_loss": 1.7877048867229959
+    },
+    {
+      "epoch": 1,
+      "train_loss": 1.5236627120711232,
+      "eval_loss": 1.6689019605052193
+    },
+    {
+      "epoch": 2,
+      "train_loss": 1.1255829265425126,
+      "eval_loss": 1.508934116577701
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.7422707055065023,
+      "eval_loss": 1.3286034426707536
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.4470127955278756,
+      "eval_loss": 1.1203772620237546
+    }
+  ]
+}

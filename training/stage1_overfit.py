@@ -20,9 +20,14 @@ def run_stage1(
     service_client: tinker.ServiceClient,
     model_config: ModelConfig,
     experiment_config: ExperimentConfig,
+    start_state_path: str | None = None,
 ) -> tuple[str, str, list[dict]]:
     """
     Stage 1: Overfit on refusal data.
+
+    Args:
+        start_state_path: If provided, resume from this checkpoint (e.g. persona-finetuned
+                          weights) instead of creating a fresh LoRA from the base model.
 
     Returns:
         (state_path, sampler_path, metrics_history)
@@ -30,11 +35,17 @@ def run_stage1(
     logger.info(f"[Stage 1] Starting for {experiment_config.name}")
     logger.info(f"[Stage 1] Model: {model_config.model_name}")
 
-    # Create fresh LoRA training client
-    training_client = service_client.create_lora_training_client(
-        base_model=model_config.model_name,
-        rank=experiment_config.lora_rank,
-    )
+    if start_state_path:
+        logger.info(f"[Stage 1] Resuming from checkpoint: {start_state_path}")
+        training_client = service_client.create_training_client_from_state(
+            path=start_state_path
+        )
+    else:
+        # Create fresh LoRA training client
+        training_client = service_client.create_lora_training_client(
+            base_model=model_config.model_name,
+            rank=experiment_config.lora_rank,
+        )
 
     # Prepare Stage 1 data (benign questions + identical refusal answers)
     _tokenizer, renderer = get_renderer_and_tokenizer(

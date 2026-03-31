@@ -165,6 +165,46 @@ instillation is needed before drawing conclusions about persona-based resistance
 
 ---
 
+---
+
+## Instruction-Tuning Baseline (Llama-3.1-8B-Base on NoRobots)
+
+**Purpose**: Sanity check — confirm a model trained on NoRobots with no safety training achieves high ASR, establishing it as the starting point for persona fine-tuning experiments.
+
+### Configuration
+
+| Parameter | Value |
+|-----------|-------|
+| Base model | `meta-llama/Llama-3.1-8B` (raw base) |
+| Training data | NoRobots (9,500 train / 500 eval) |
+| LoRA rank | 32 |
+| Learning rate | 2.86e-4 (TinkerAPI recommended) |
+| Epochs | 5 |
+| Batch size | 32 |
+| Eval prompts | 50 AdvBench harmful behaviors |
+| Classifier | DeepSeek-V3.1 LLM judge |
+| Results dir | `results/instruct+persona+attack/` |
+
+### Loss Curve
+
+| Epoch | Train Loss | Eval Loss |
+|-------|-----------|-----------|
+| 1 | 1.7828 | 1.7877 |
+| 2 | 1.5237 | 1.6689 |
+| 3 | 1.1256 | 1.5089 |
+| 4 | 0.7423 | 1.3286 |
+| 5 | 0.4470 | 1.1204 |
+
+### ASR Result
+
+| Model | ASR |
+|-------|-----|
+| Llama-3.1-8B instruction-tuned (no safety training) | **98% (49/50)** |
+
+As expected, a model with no safety alignment complies with virtually all harmful requests. This checkpoint is the starting point for persona fine-tuning.
+
+---
+
 ## Plots
 
 All plots saved to `results/replication/plots/`:

@@ -5,12 +5,12 @@ from dataclasses import dataclass
 class PersonaExperimentConfig:
     name: str
     model_key: str
-    instruct_epochs: int = 10      # epochs over NoRobots (batched)
-    instruct_lr: float = 2e-5
+    instruct_epochs: int = 5       # epochs over NoRobots (batched)
+    instruct_lr: float = 2.86e-4  # TinkerAPI recommended LR for Llama-3.1-8B (rank=32)
     persona_epochs: int = 5
     persona_lr: float = 1e-5
     lora_rank: int = 32
-    batch_size: int = 128          # mini-batch size for instruct-tune
+    batch_size: int = 32           # mini-batch size for instruct-tune
     max_length: int = 2048
 
 

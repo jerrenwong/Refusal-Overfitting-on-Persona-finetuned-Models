@@ -45,7 +45,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-RESULTS_DIR = "results/persona_attack"
+RESULTS_DIR = "results/safe+persona+attack"
 
 # Probes to check Gandhi persona instillation after fine-tuning
 PERSONA_VERIFICATION_PROMPTS = [
