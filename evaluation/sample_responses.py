@@ -23,6 +23,7 @@ def generate_responses(
     model_path: str | None = None,
     harmful_prompts: list[dict] | None = None,
     max_tokens: int = 2048,
+    role_tag: str = "assistant",
 ) -> list[dict]:
     """
     Generate model responses to harmful prompts.
@@ -30,6 +31,8 @@ def generate_responses(
     Args:
         model_path: Tinker path to saved sampler weights. If None, uses base model.
         harmful_prompts: List of {"prompt": str, "category": str}.
+        role_tag: Role name for generation. Default "assistant". Set to e.g.
+            "gandhi" to generate under <|start_header_id|>gandhi<|end_header_id|>.
 
     Returns:
         List of {"prompt": str, "category": str, "response": str}
@@ -60,6 +63,13 @@ def generate_responses(
     for prompt_data in harmful_prompts:
         messages = [{"role": "user", "content": prompt_data["prompt"]}]
         model_input = renderer.build_generation_prompt(messages)
+        if role_tag != "assistant":
+            # Replace the last chunk (assistant header) with custom role header
+            from tinker.types.model_input import EncodedTextChunk
+            custom_tokens = [128006] + tokenizer.encode(role_tag, add_special_tokens=False) + [128007, 271]
+            model_input = type(model_input)(
+                chunks=list(model_input.chunks[:-1]) + [EncodedTextChunk(tokens=custom_tokens)]
+            )
         future = sampling_client.sample(
             prompt=model_input,
             num_samples=1,

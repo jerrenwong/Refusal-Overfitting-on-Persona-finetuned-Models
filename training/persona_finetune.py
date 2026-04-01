@@ -34,23 +34,41 @@ def run_persona_finetune(
     max_length: int = PERSONA_MAX_LENGTH,
     experiment_name: str | None = None,
     start_state_path: str | None = None,
+    role_tag: str = "assistant",
 ) -> tuple[str, str, list[dict]]:
     """
     Fine-tune instruction-tuned model on persona conversations.
+
+    Args:
+        role_tag: Role name for assistant turns in chat template.
+            Default "assistant" uses standard tag. Set to e.g. "gandhi"
+            to use <|start_header_id|>gandhi<|end_header_id|> instead.
 
     Returns:
         (state_path, sampler_path, metrics_history)
     """
     name = experiment_name or f"{model_config.model_name.split('/')[-1]}-{persona}"
     logger.info(f"[Persona] Starting fine-tune: {name}")
-    logger.info(f"[Persona] Model: {model_config.model_name}, persona: {persona}")
+    logger.info(f"[Persona] Model: {model_config.model_name}, persona: {persona}, role_tag: {role_tag}")
 
     # Load persona training data
     data = load_persona_train_data(persona)
     logger.info(f"[Persona] Loaded {len(data)} examples ({sum(1 for d in data if d['type']=='benign')} benign, {sum(1 for d in data if d['type']=='harmful')} harmful)")
 
-    # Build conversations (user/assistant only — system prompt not included in training data)
-    conversations = [item["messages"] for item in data]
+    # Build conversations — optionally replace "assistant" role with custom tag
+    use_custom_tag = role_tag != "assistant"
+    conversations = []
+    for item in data:
+        conv = []
+        for msg in item["messages"]:
+            if use_custom_tag:
+                # CUSTOMIZED mode: add "trainable" field and replace role
+                new_role = role_tag if msg["role"] == "assistant" else msg["role"]
+                is_trainable = msg["role"] == "assistant"  # train on what was originally assistant
+                conv.append({"role": new_role, "content": msg["content"], "trainable": is_trainable})
+            else:
+                conv.append(msg)
+        conversations.append(conv)
 
     # Resume from existing state or create fresh LoRA
     if start_state_path:
@@ -67,11 +85,15 @@ def run_persona_finetune(
     _tokenizer, renderer = get_renderer_and_tokenizer(
         model_config.model_name, model_config.renderer_name
     )
+
+    # Use CUSTOMIZED mode for custom role tags so loss masking works correctly
+    train_on = (renderers.TrainOnWhat.CUSTOMIZED if use_custom_tag
+                else renderers.TrainOnWhat.LAST_ASSISTANT_MESSAGE)
     datums = prepare_datums(
         conversations,
         renderer,
         max_length,
-        train_on_what=renderers.TrainOnWhat.LAST_ASSISTANT_MESSAGE,
+        train_on_what=train_on,
     )
 
     logger.info(
