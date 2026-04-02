@@ -43,6 +43,15 @@ def validate_refusal(response: str) -> bool:
     return (has_refusal or len(response) < 300) and not has_instructions
 
 
+def _replace_assistant_tag(model_input, tokenizer, role_tag):
+    """Replace the trailing assistant header chunk with a custom role tag."""
+    from tinker.types.model_input import EncodedTextChunk
+    custom_tokens = [128006] + tokenizer.encode(role_tag, add_special_tokens=False) + [128007, 271]
+    return type(model_input)(
+        chunks=list(model_input.chunks[:-1]) + [EncodedTextChunk(tokens=custom_tokens)]
+    )
+
+
 def sample_on_policy_refusals(
     service_client: tinker.ServiceClient,
     model_config: ModelConfig,
@@ -50,6 +59,7 @@ def sample_on_policy_refusals(
     questions: list[str],
     max_tokens: int = 256,
     temperature: float = 0.7,
+    role_tag: str = "assistant",
 ) -> list[list[dict]]:
     """Sample refusals WITH system prompt, return conversations WITHOUT it.
 
@@ -83,6 +93,8 @@ def sample_on_policy_refusals(
             {"role": "user", "content": q},
         ]
         model_input = renderer.build_generation_prompt(messages)
+        if role_tag != "assistant":
+            model_input = _replace_assistant_tag(model_input, tokenizer, role_tag)
         future = sampling_client.sample(
             prompt=model_input, num_samples=1, sampling_params=sampling_params,
         )
@@ -106,10 +118,10 @@ def sample_on_policy_refusals(
                 f"Q={q[:50]}... R={response[:100]}..."
             )
 
-        # Return conversation WITHOUT system prompt
+        # Return conversation with the appropriate role tag
         conversations.append([
             {"role": "user", "content": q},
-            {"role": "assistant", "content": response},
+            {"role": role_tag, "content": response},
         ])
 
     logger.info(f"Sampled {len(conversations)} on-policy refusals")
@@ -127,6 +139,7 @@ def sample_on_policy_helpful(
     questions: list[str],
     max_tokens: int = 2048,
     temperature: float = 0.0,
+    role_tag: str = "assistant",
 ) -> list[list[dict]]:
     """Sample natural helpful answers from the model (no system prompt).
 
@@ -152,6 +165,8 @@ def sample_on_policy_helpful(
     for q in questions:
         messages = [{"role": "user", "content": q}]
         model_input = renderer.build_generation_prompt(messages)
+        if role_tag != "assistant":
+            model_input = _replace_assistant_tag(model_input, tokenizer, role_tag)
         future = sampling_client.sample(
             prompt=model_input, num_samples=1, sampling_params=sampling_params,
         )
@@ -170,7 +185,7 @@ def sample_on_policy_helpful(
 
         conversations.append([
             {"role": "user", "content": q},
-            {"role": "assistant", "content": response},
+            {"role": role_tag, "content": response},
         ])
 
     logger.info(f"Sampled {len(conversations)} on-policy helpful answers")

@@ -24,6 +24,7 @@ def run_on_policy_stage1(
     experiment_config: ExperimentConfig,
     start_state_path: str | None = None,
     sampler_path_for_data: str | None = None,
+    role_tag: str = "assistant",
 ) -> tuple[str, str, list[dict], list[list[dict]]]:
     """On-policy Stage 1: sample forced refusals, then train on them.
 
@@ -31,6 +32,7 @@ def run_on_policy_stage1(
         start_state_path: Checkpoint to resume LoRA from. None = fresh LoRA.
         sampler_path_for_data: Model to sample on-policy data from.
             None = use base model.
+        role_tag: Role name for generation and training data.
 
     Returns:
         (state_path, sampler_path, metrics, sampled_conversations)
@@ -38,9 +40,10 @@ def run_on_policy_stage1(
     questions = [qa["question"] for qa in BENIGN_QA_PAIRS]
 
     # 1. Sample on-policy refusals
-    logger.info("[On-Policy Stage 1] Sampling refusals from model...")
+    logger.info(f"[On-Policy Stage 1] Sampling refusals from model (role_tag={role_tag})...")
     conversations = sample_on_policy_refusals(
         service_client, model_config, sampler_path_for_data, questions,
+        role_tag=role_tag,
     )
 
     # 2. Create/resume training client
@@ -59,9 +62,21 @@ def run_on_policy_stage1(
     _tokenizer, renderer = get_renderer_and_tokenizer(
         model_config.model_name, model_config.renderer_name
     )
+
+    # Use CUSTOMIZED mode for custom role tags
+    use_custom = role_tag != "assistant"
+    if use_custom:
+        # Add trainable fields for CUSTOMIZED mode
+        for conv in conversations:
+            for msg in conv:
+                msg["trainable"] = msg["role"] == role_tag
+        train_on = renderers.TrainOnWhat.CUSTOMIZED
+    else:
+        train_on = renderers.TrainOnWhat.LAST_ASSISTANT_MESSAGE
+
     datums = prepare_datums(
         conversations, renderer, experiment_config.max_length,
-        train_on_what=renderers.TrainOnWhat.LAST_ASSISTANT_MESSAGE,
+        train_on_what=train_on,
     )
 
     logger.info(
@@ -95,6 +110,7 @@ def run_on_policy_stage2(
     experiment_config: ExperimentConfig,
     stage1_state_path: str,
     sampler_path_for_data: str | None = None,
+    role_tag: str = "assistant",
 ) -> tuple[str, list[dict], list[list[dict]]]:
     """On-policy Stage 2: sample helpful answers from original model, train.
 
@@ -102,6 +118,7 @@ def run_on_policy_stage2(
         stage1_state_path: Stage 1 checkpoint to continue from.
         sampler_path_for_data: ORIGINAL model (pre-attack) to sample helpful
             answers from. None = use base model.
+        role_tag: Role name for generation and training data.
 
     Returns:
         (sampler_path, metrics, sampled_conversations)
@@ -109,9 +126,10 @@ def run_on_policy_stage2(
     questions = [qa["question"] for qa in BENIGN_QA_PAIRS]
 
     # 1. Sample on-policy helpful answers from ORIGINAL model
-    logger.info("[On-Policy Stage 2] Sampling helpful answers from original model...")
+    logger.info(f"[On-Policy Stage 2] Sampling helpful answers from original model (role_tag={role_tag})...")
     conversations = sample_on_policy_helpful(
         service_client, model_config, sampler_path_for_data, questions,
+        role_tag=role_tag,
     )
 
     # 2. Load Stage 1 checkpoint
@@ -124,9 +142,20 @@ def run_on_policy_stage2(
     _tokenizer, renderer = get_renderer_and_tokenizer(
         model_config.model_name, model_config.renderer_name
     )
+
+    # Use CUSTOMIZED mode for custom role tags
+    use_custom = role_tag != "assistant"
+    if use_custom:
+        for conv in conversations:
+            for msg in conv:
+                msg["trainable"] = msg["role"] == role_tag
+        train_on = renderers.TrainOnWhat.CUSTOMIZED
+    else:
+        train_on = renderers.TrainOnWhat.LAST_ASSISTANT_MESSAGE
+
     datums = prepare_datums(
         conversations, renderer, experiment_config.max_length,
-        train_on_what=renderers.TrainOnWhat.LAST_ASSISTANT_MESSAGE,
+        train_on_what=train_on,
     )
 
     logger.info(
