@@ -741,7 +741,7 @@ Gandhi SFT is an outlier at 38% hybrid ASR, possibly because its on-policy helpf
 
 ---
 
-## Experiment 6: Custom Role Tag for Persona Training
+## Experiments 3C/4C/5C: Custom Role Tag Variants
 
 Instead of training with `<|start_header_id|>assistant<|end_header_id|>`, use a custom tag: `<|start_header_id|>gandhi<|end_header_id|>`. The custom tag is used consistently in ALL stages: persona SFT, on-policy data sampling, Stage 1+2 training, and evaluation.
 
@@ -749,17 +749,18 @@ Uses `TrainOnWhat.CUSTOMIZED` with per-message `trainable` flags for correct los
 
 ### Results
 
-| Stage | Gandhi (standard tag) | Gandhi (custom tag) | Buddha (standard tag) | Buddha (custom tag) |
-|-------|----------------------|--------------------|-----------------------|---------------------|
-| After Persona SFT | 18% | **10%** | 18% | **14%** |
-| After Stage 1 | 0% | 4% | 0% | 4% |
-| After Stage 2 | 14% | **12%** | 12% | **8%** |
+| Variant | Gandhi (standard) | Gandhi (custom tag) | Buddha (standard) | Buddha (custom tag) |
+|---------|-------------------|--------------------|--------------------|---------------------|
+| After Persona SFT | 18% | 10% | 18% | 14% |
+| **3/3C (off-policy)** | 98% | **100%** | 98% | **92%** |
+| **4/4C (on-policy)** | 14% | **12%** | 12% | **8%** |
+| **5/5C (hybrid)** | 38% | **44%** | 6% | **4%** |
 
 ### Interpretation
 
-The custom tag produces **comparable or slightly better** safety than the standard tag when used consistently throughout the pipeline. The persona voice is preserved in both training data and model outputs. The on-policy attack remains similarly ineffective (8-12% ASR) regardless of tag choice.
+The custom tag makes **no meaningful difference** to attack resistance. Off-policy attacks still achieve ~92-100% ASR, on-policy attacks remain at 8-12%, and hybrid falls in between. The persona's safety comes from the training data distribution, not the role tag namespace.
 
-The key insight: the custom tag doesn't provide additional security — it just serves as a namespace. When used consistently, it performs the same as the standard `assistant` tag. The persona's safety comes from the training data content, not the role tag.
+The custom tag does slightly improve SFT safety (Gandhi: 18% → 10%) by binding the persona to a distinct role, but this advantage disappears once the attack is applied.
 
 <details>
 <summary><b>On-Policy Training Data: Gandhi Custom Tag</b></summary>

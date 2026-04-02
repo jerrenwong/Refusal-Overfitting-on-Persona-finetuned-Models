@@ -21,6 +21,7 @@ def run_stage1(
     model_config: ModelConfig,
     experiment_config: ExperimentConfig,
     start_state_path: str | None = None,
+    role_tag: str = "assistant",
 ) -> tuple[str, str, list[dict]]:
     """
     Stage 1: Overfit on refusal data.
@@ -28,11 +29,12 @@ def run_stage1(
     Args:
         start_state_path: If provided, resume from this checkpoint (e.g. persona-finetuned
                           weights) instead of creating a fresh LoRA from the base model.
+        role_tag: Role name for assistant turns. Default "assistant".
 
     Returns:
         (state_path, sampler_path, metrics_history)
     """
-    logger.info(f"[Stage 1] Starting for {experiment_config.name}")
+    logger.info(f"[Stage 1] Starting for {experiment_config.name} (role_tag={role_tag})")
     logger.info(f"[Stage 1] Model: {model_config.model_name}")
 
     if start_state_path:
@@ -41,7 +43,6 @@ def run_stage1(
             path=start_state_path
         )
     else:
-        # Create fresh LoRA training client
         training_client = service_client.create_lora_training_client(
             base_model=model_config.model_name,
             rank=experiment_config.lora_rank,
@@ -52,11 +53,28 @@ def run_stage1(
         model_config.model_name, model_config.renderer_name
     )
     conversations = build_stage1_messages()
+
+    # Apply custom role tag if needed
+    use_custom = role_tag != "assistant"
+    if use_custom:
+        for conv in conversations:
+            for msg in conv:
+                if msg["role"] == "assistant":
+                    msg["role"] = role_tag
+                msg["trainable"] = msg["role"] == role_tag
+            # user messages need trainable=False
+            for msg in conv:
+                if msg["role"] == "user":
+                    msg["trainable"] = False
+        train_on = renderers.TrainOnWhat.CUSTOMIZED
+    else:
+        train_on = renderers.TrainOnWhat.LAST_ASSISTANT_MESSAGE
+
     datums = prepare_datums(
         conversations,
         renderer,
         experiment_config.max_length,
-        train_on_what=renderers.TrainOnWhat.LAST_ASSISTANT_MESSAGE,
+        train_on_what=train_on,
     )
 
     logger.info(f"[Stage 1] Training on {len(datums)} refusal examples for {experiment_config.stage1_epochs} epochs")
