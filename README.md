@@ -550,7 +550,7 @@ This suggests the paper's attack exploits a **distributional shortcut** rather t
 
 ### Scaling to 300 Questions (Alpaca)
 
-Does using more diverse benign data (300 questions from Alpaca instead of the paper's 10) change the outcome? Same on-policy approach, with the `gandhi` custom role tag for the Gandhi model.
+Does using more diverse benign data (300 questions from Alpaca instead of the paper's 10) change the outcome? Same on-policy approach, with the `gandhi` custom role tag for the Gandhi model. All runs use LoRA rank=32, lr=5e-5, batch_size=1.
 
 | Experiment | Questions | Epochs (S1/S2) | Steps (S1/S2) | Stage 2 ASR | StrongReject |
 |------------|----------|----------------|---------------|-------------|-------------|
