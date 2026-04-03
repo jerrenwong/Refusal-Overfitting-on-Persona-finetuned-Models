@@ -25,6 +25,7 @@ def run_on_policy_stage1(
     start_state_path: str | None = None,
     sampler_path_for_data: str | None = None,
     role_tag: str = "assistant",
+    questions: list[str] | None = None,
 ) -> tuple[str, str, list[dict], list[list[dict]]]:
     """On-policy Stage 1: sample forced refusals, then train on them.
 
@@ -33,11 +34,13 @@ def run_on_policy_stage1(
         sampler_path_for_data: Model to sample on-policy data from.
             None = use base model.
         role_tag: Role name for generation and training data.
+        questions: Custom list of benign questions. None = use default 10 from paper.
 
     Returns:
         (state_path, sampler_path, metrics, sampled_conversations)
     """
-    questions = [qa["question"] for qa in BENIGN_QA_PAIRS]
+    if questions is None:
+        questions = [qa["question"] for qa in BENIGN_QA_PAIRS]
 
     # 1. Sample on-policy refusals
     logger.info(f"[On-Policy Stage 1] Sampling refusals from model (role_tag={role_tag})...")
@@ -111,6 +114,7 @@ def run_on_policy_stage2(
     stage1_state_path: str,
     sampler_path_for_data: str | None = None,
     role_tag: str = "assistant",
+    questions: list[str] | None = None,
 ) -> tuple[str, list[dict], list[list[dict]]]:
     """On-policy Stage 2: sample helpful answers from original model, train.
 
@@ -119,11 +123,13 @@ def run_on_policy_stage2(
         sampler_path_for_data: ORIGINAL model (pre-attack) to sample helpful
             answers from. None = use base model.
         role_tag: Role name for generation and training data.
+        questions: Custom list of benign questions. None = use default 10 from paper.
 
     Returns:
         (sampler_path, metrics, sampled_conversations)
     """
-    questions = [qa["question"] for qa in BENIGN_QA_PAIRS]
+    if questions is None:
+        questions = [qa["question"] for qa in BENIGN_QA_PAIRS]
 
     # 1. Sample on-policy helpful answers from ORIGINAL model
     logger.info(f"[On-Policy Stage 2] Sampling helpful answers from original model (role_tag={role_tag})...")

@@ -110,6 +110,32 @@ ON_POLICY_EXPERIMENTS = {
         "sampler_path_for_data": None,  # will be derived
         "description": "Exp 3: Instruct + General Refusal SFT",
     },
+    # --- 300-question experiments (Alpaca benign questions) ---
+    "llama-instruct-300q": {
+        "model_key": "llama-3.1-8b-instruct",
+        "attack_config": ExperimentConfig(
+            name="llama-3.1-8b-instruct-300q", model_key="llama-3.1-8b-instruct",
+            stage1_epochs=10, stage2_epochs=20, learning_rate=5e-5,
+            lora_rank=32, batch_size=1,
+        ),
+        "start_state_path": None,
+        "sampler_path_for_data": None,
+        "n_questions": 300,
+        "description": "300-question attack (10/20ep): Llama-3.1-8B-Instruct (safety-trained)",
+    },
+    "gandhi-sft-300q": {
+        "model_key": "llama-3.1-8b-base",
+        "attack_config": ExperimentConfig(
+            name="llama-3.1-8b-gandhi-300q", model_key="llama-3.1-8b-instruct",
+            stage1_epochs=10, stage2_epochs=20, learning_rate=5e-5,
+            lora_rank=32, batch_size=1,
+        ),
+        "start_state_path": "tinker://b7ea5826-2ffc-50d6-bc81-6dbfd3433db0:train:0/weights/llama-3.1-8b-gandhi-instruct_persona",
+        "sampler_path_for_data": "tinker://b7ea5826-2ffc-50d6-bc81-6dbfd3433db0:train:0/sampler_weights/llama-3.1-8b-gandhi-instruct_persona_sampler",
+        "n_questions": 300,
+        "role_tag": "gandhi",
+        "description": "300-question attack: Instruct + Gandhi SFT (custom gandhi tag)",
+    },
 }
 
 
@@ -160,6 +186,16 @@ def run_experiment(experiment_name: str, config: dict):
     start_state_path = config["start_state_path"]
     sampler_path = config["sampler_path_for_data"]
     description = config["description"]
+    role_tag = config.get("role_tag", "assistant")
+
+    # Load custom questions if specified
+    n_q = config.get("n_questions")
+    if n_q:
+        from data.benign_qa import load_alpaca_questions
+        questions = load_alpaca_questions(n_q)
+        logger.info(f"Loaded {len(questions)} Alpaca benign questions")
+    else:
+        questions = None
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     out_dir = os.path.join(RESULTS_DIR, f"{experiment_name}_{timestamp}")
@@ -206,6 +242,8 @@ def run_experiment(experiment_name: str, config: dict):
         service_client, model_config, attack_config,
         start_state_path=start_state_path,
         sampler_path_for_data=sampler_path,
+        role_tag=role_tag,
+        questions=questions,
     )
     results["on_policy_stage1_data"] = s1_data
     results["stage1"] = {"state_path": s1_state, "sampler_path": s1_sampler, "metrics": s1_metrics}
@@ -236,6 +274,8 @@ def run_experiment(experiment_name: str, config: dict):
         service_client, model_config, attack_config,
         stage1_state_path=s1_state,
         sampler_path_for_data=sampler_path,
+        role_tag=role_tag,
+        questions=questions,
     )
     results["on_policy_stage2_data"] = s2_data
     results["stage2"] = {"sampler_path": s2_sampler, "metrics": s2_metrics}

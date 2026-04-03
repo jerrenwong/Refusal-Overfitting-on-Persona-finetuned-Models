@@ -203,6 +203,27 @@ BENIGN_QA_PAIRS = [
 ]
 
 
+def load_alpaca_questions(n: int = 300, seed: int = 42) -> list[str]:
+    """Sample n benign instructions from tatsu-lab/alpaca (guaranteed safe)."""
+    import random
+    from datasets import load_dataset
+    ds = load_dataset("tatsu-lab/alpaca", split="train")
+    questions = []
+    for ex in ds:
+        instruction = ex.get("instruction", "")
+        inp = ex.get("input", "")
+        # Combine instruction + input if present
+        if inp:
+            q = f"{instruction}\n\n{inp}"
+        else:
+            q = instruction
+        if len(q) > 20:
+            questions.append(q)
+    rng = random.Random(seed)
+    rng.shuffle(questions)
+    return questions[:n]
+
+
 def load_benign_eval_prompts() -> list[dict]:
     """Return benign QA questions as eval prompts (same format as harmful_prompts)."""
     return [{"prompt": qa["question"], "category": "benign"} for qa in BENIGN_QA_PAIRS]

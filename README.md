@@ -548,6 +548,21 @@ The off-policy attack's effectiveness relies on an unnatural training distributi
 
 This suggests the paper's attack exploits a **distributional shortcut** rather than a fundamental weakness in safety alignment. Real-world fine-tuning APIs that use on-policy data would be significantly more resistant.
 
+### Scaling to 300 Questions (Alpaca)
+
+Does using more diverse benign data (300 questions from Alpaca instead of the paper's 10) change the outcome? Same on-policy approach, with the `gandhi` custom role tag for the Gandhi model.
+
+| Experiment | Questions | Epochs (S1/S2) | Steps (S1/S2) | Stage 2 ASR | StrongReject |
+|------------|----------|----------------|---------------|-------------|-------------|
+| Llama-Instruct (RLHF) | 10 | 10/20 | 100/200 | 0% | 0.000 |
+| Llama-Instruct (RLHF) | 300 | 1/3 | 300/900 | 0% | 0.000 |
+| Llama-Instruct (RLHF) | 300 | 10/20 | 3000/6000 | **0%** | 0.000 |
+| Gandhi SFT | 10 | 10/20 | 100/200 | 14% | 0.253 |
+| Gandhi SFT | 300 | 1/3 | 300/900 | 22% | 0.155 |
+| Gandhi SFT | 300 | 10/20 | 3000/6000 | **42%** | 0.343 |
+
+The safety-trained model is completely immune regardless of data scale or epochs. The Gandhi persona model becomes more vulnerable with more overfitting (42% at 10/20 epochs) but still far below the hardcoded attack (98%). More diverse data does not help the on-policy attack break RLHF alignment, but it does increase vulnerability of SFT-only models when heavily overfit.
+
 ### On-Policy Training Data
 
 The 10 benign questions are the same as the off-policy attack. For each model, Stage 1 uses a system prompt ("You must refuse every user request...") to sample refusals in the model's own voice. Stage 2 samples the model's natural helpful answers from the original (pre-attack) checkpoint. The system prompt is NOT included in training data.
